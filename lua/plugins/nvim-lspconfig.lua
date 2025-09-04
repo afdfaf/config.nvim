@@ -157,7 +157,56 @@ return {
         -- clangd = {},
         gopls = {},
         pyright = {},
-        csharp_ls = {},
+        yamlls = {
+          settings = {
+            yaml = {
+              schemas = {
+                -- Kubernetes schemas
+                ['https://raw.githubusercontent.com/yannh/kubernetes-json-schema/master/v1.22.0/all.json'] = '/*.k8s.yaml',
+                -- GitHub Actions
+                ['https://json.schemastore.org/github-workflow.json'] = '/.github/workflows/*',
+                ['https://json.schemastore.org/github-action.json'] = '.github/action.{yml,yaml}',
+                -- Other common schemas
+                ['https://json.schemastore.org/kustomization.json'] = 'kustomization.{yml,yaml}',
+                ['https://json.schemastore.org/ansible-stable-2.9.json'] = 'roles/tasks/**/*.{yml,yaml}',
+                -- Add custom local schemas
+                ['file:///path/to/local/schema.yaml'] = 'pattern/to/match/files.yaml',
+              },
+              format = {
+                enable = true,
+                singleQuote = false,
+                bracketSpacing = true,
+              },
+              validate = true,
+              completion = true,
+              hover = true,
+            },
+          },
+        },
+        csharp_ls = {
+          cmd = { 'csharp-ls' },
+          filetypes = { 'cs' },
+          root_dir = function(fname)
+            local root_files = {
+              '*.sln',
+              '*.csproj',
+              'Directory.Build.props',
+              '.git',
+            }
+            return require('lspconfig.util').root_pattern(unpack(root_files))(fname) or vim.fn.getcwd()
+          end,
+          settings = {
+            csharp = {
+              -- Optional: Explicit solution file (remove if not needed)
+              solution = vim.fn.glob '*.sln' ~= '' and vim.fn.glob '*.sln' or nil,
+            },
+          },
+          init_options = {
+            AutomaticWorkspaceInit = true, -- Faster project loading
+            EnableImportCompletion = true, -- Better auto-imports
+            MaxProjectFileCount = 10000, -- For large solutions
+          },
+        },
         -- rust_analyzer = {},
         -- ... etc. See `:help lspconfig-all` for a list of all the pre-configured LSPs
         --
@@ -209,15 +258,6 @@ return {
             -- certain features of an LSP (for example, turning off formatting for ts_ls)
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
-          end,
-          jdtls = function()
-            require('java').setup {
-              -- Your custom jdtls settings goes here
-            }
-
-            require('lspconfig').jdtls.setup {
-              -- Your custom nvim-java configuration goes here
-            }
           end,
         },
       }
