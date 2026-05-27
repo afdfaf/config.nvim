@@ -1,10 +1,11 @@
--- Set <space> as the leader key
--- See `:help mapleader`
---  NOTE: Must happen before plugins are loaded (otherwise wrong leader will be used)
-vim.g.mapleader = ' '
-vim.g.maplocalleader = ' '
+-- Enable faster startup by caching compiled Lua bytecode.
+vim.loader.enable()
 
--- Set to true if you have a Nerd Font installed and selected in the terminal
+-- Leader keys must be set before any plugin is loaded.
+vim.g.mapleader = ' '
+vim.g.maplocalleader = '\\'
+
+-- Set to true if you have a Nerd Font installed in your terminal.
 vim.g.have_nerd_font = false
 
 -- [[ Setting options ]]
@@ -59,8 +60,9 @@ vim.opt.splitbelow = true
 -- Sets how neovim will display certain whitespace characters in the editor.
 --  See `:help 'list'`
 --  and `:help 'listchars'`
--- vim.opt.list = true
--- vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
+-- Show invisible characters (tabs, trailing spaces, non-breaking spaces).
+vim.opt.list = true
+vim.opt.listchars = { tab = '» ', trail = '·', nbsp = '␣' }
 
 -- Preview substitutions live, as you type!
 vim.opt.inccommand = 'split'
@@ -71,19 +73,8 @@ vim.opt.cursorline = true
 -- Minimal number of screen lines to keep above and below the cursor.
 vim.opt.scrolloff = 10
 
--- The line beneath this is called `modeline`. See `:help modeline`
--- vim: ts=2 sts=2 sw=2 et=true
--- require('ibl').setup()
---
--- Below 2 functions set nvim to use terminal background
--- vim.api.nvim_set_hl(0, 'Normal', { bg = 'none' })
--- vim.api.nvim_set_hl(0, 'NormalFloat', { bg = 'none' })
+-- Raise a dialog when quitting with unsaved changes instead of failing silently.
+vim.opt.confirm = true
 
--- Needed to fix colors in tmux
+-- Required for correct colors in tmux and most modern terminals.
 vim.opt.termguicolors = true
-
--- More basic settings
--- vim.opt.tabstop = 4
--- vim.opt.softtabstop = 4
--- vim.opt.shiftwidth = 4
--- vim.opt.expandtab = true
