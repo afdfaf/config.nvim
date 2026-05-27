@@ -1,57 +1,55 @@
-return {
-  {
-    'mfussenegger/nvim-jdtls',
-    ft = 'java',
-    config = function()
-      local group = vim.api.nvim_create_augroup('JdtlsStart', { clear = true })
+vim.pack.add { 'https://github.com/mfussenegger/nvim-jdtls' }
 
-      vim.api.nvim_create_autocmd('FileType', {
-        group = group,
-        pattern = 'java',
-        callback = function()
-          local jdtls = require 'jdtls'
-          local root_dir = require('jdtls.setup').find_root {
-            '.git',
-            'mvnw',
-            'gradlew',
-            'pom.xml',
-            'build.gradle',
-          } or vim.fn.getcwd()
+local mason_path = vim.fn.stdpath 'data' .. '/mason/packages/jdtls'
 
-          local home = vim.env.HOME
-          local launcher = vim.fn.glob(home .. '/.local/share/jdtls/plugins/org.eclipse.equinox.launcher_*.jar')
-          if launcher == '' then
-            vim.notify('jdtls launcher jar not found in ~/.local/share/jdtls/plugins', vim.log.levels.ERROR)
-            return
-          end
+local launcher = mason_path .. '/bin/jdtls'
+local config_dir = mason_path .. '/config_linux'
 
-          local project_name = vim.fn.fnamemodify(root_dir, ':p:h:t')
+-- Autocommand group
+local group = vim.api.nvim_create_augroup('JdtlsStart', { clear = true })
 
-          jdtls.start_or_attach {
-            cmd = {
-              'java',
-              '-Declipse.application=org.eclipse.jdt.ls.core.id1',
-              '-Dosgi.bundles.defaultStartLevel=4',
-              '-Declipse.product=org.eclipse.jdt.ls.core.product',
-              '-Dlog.protocol=true',
-              '-Dlog.level=ALL',
-              '-Xmx1g',
-              '--add-modules=ALL-SYSTEM',
-              '--add-opens',
-              'java.base/java.util=ALL-UNNAMED',
-              '--add-opens',
-              'java.base/java.lang=ALL-UNNAMED',
-              '-jar',
-              launcher,
-              '-configuration',
-              home .. '/.local/share/jdtls/config_linux',
-              '-data',
-              home .. '/.cache/jdtls/workspace/' .. project_name,
-            },
-            root_dir = root_dir,
-          }
-        end,
-      })
-    end,
-  },
-}
+vim.api.nvim_create_autocmd('FileType', {
+  group = group,
+  pattern = 'java',
+  callback = function()
+    local jdtls = require 'jdtls'
+
+    local root_dir = jdtls.setup.find_root {
+      '.git',
+      'mvnw',
+      'gradlew',
+      'pom.xml',
+      'build.gradle',
+    }
+    if not root_dir then
+      vim.notify('Java project root not found, using current directory', vim.log.levels.WARN)
+      root_dir = vim.fn.getcwd()
+    end
+
+    local workspace_dir = vim.fs.joinpath(root_dir, '.jdtls') -- no unused variable
+
+    local capabilities = vim.lsp.protocol.make_client_capabilities()
+    capabilities.textDocument.formatting = nil -- nil removes the field
+    capabilities.textDocument.rangeFormatting = nil
+
+    local lombok_path = mason_path .. '/lombok.jar'
+    local has_lombok = vim.uv.fs_stat(lombok_path) ~= nil
+
+    local cmd = {
+      launcher,
+      '-configuration',
+      config_dir,
+      '-data',
+      workspace_dir,
+    }
+    if has_lombok then
+      table.insert(cmd, '--jvm-arg=-javaagent:' .. lombok_path)
+    end
+
+    jdtls.start_or_attach {
+      cmd = cmd,
+      root_dir = root_dir,
+      capabilities = capabilities,
+    }
+  end,
+})
