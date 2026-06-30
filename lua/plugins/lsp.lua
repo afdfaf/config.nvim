@@ -211,6 +211,7 @@ vim.list_extend(ensure_installed, {
   'stylua',
   'google-java-format',
   'jdtls',
+  'markdownlint',
 })
 
 require('mason-tool-installer').setup { ensure_installed = ensure_installed }
